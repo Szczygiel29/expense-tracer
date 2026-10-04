@@ -1,101 +1,120 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useExpenses } from "@/context/ExpensesContext";
+import { useToast } from "@/context/ToastContext";
+import SummaryCards from "@/components/SummaryCards";
+import CategoryPieChart from "@/components/CategoryPieChart";
+import MonthlyTrendChart from "@/components/MonthlyTrendChart";
+import ExpenseFormModal from "@/components/ExpenseFormModal";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { CATEGORY_STYLES } from "@/lib/categories";
+import type { ExpenseInput } from "@/types/expense";
+
+export default function DashboardPage() {
+  const { expenses, isLoading, addExpense } = useExpenses();
+  const { showToast } = useToast();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const recentExpenses = useMemo(() => expenses.slice(0, 5), [expenses]);
+
+  function handleAdd(input: ExpenseInput) {
+    addExpense(input);
+    setIsFormOpen(false);
+    showToast("Expense added successfully.");
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-600" />
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Overview of your spending habits.
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => setIsFormOpen(true)}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <span className="text-base leading-none">+</span>
+          Add Expense
+        </button>
+      </div>
+
+      <SummaryCards expenses={expenses} />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="mb-4 text-sm font-semibold text-slate-900">
+            Spending by Category
+          </h2>
+          <CategoryPieChart expenses={expenses} />
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="mb-4 text-sm font-semibold text-slate-900">
+            Monthly Trend (last 6 months)
+          </h2>
+          <MonthlyTrendChart expenses={expenses} />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900">Recent Expenses</h2>
+          <Link href="/expenses" className="text-sm font-medium text-emerald-700 hover:text-emerald-800">
+            View all →
+          </Link>
+        </div>
+        {recentExpenses.length === 0 ? (
+          <p className="py-8 text-center text-sm text-slate-400">
+            No expenses yet. Add your first one to get started.
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {recentExpenses.map((expense) => {
+              const style = CATEGORY_STYLES[expense.category];
+              return (
+                <li key={expense.id} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`flex h-9 w-9 items-center justify-center rounded-full ${style.bg} text-base`}
+                    >
+                      {style.icon}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">
+                        {expense.description}
+                      </p>
+                      <p className="text-xs text-slate-400">{formatDate(expense.date)}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {formatCurrency(expense.amount)}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <ExpenseFormModal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleAdd}
+      />
     </div>
   );
 }
